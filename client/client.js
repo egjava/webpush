@@ -3,8 +3,7 @@ const publicVapidKey =
    
 
 // Check for service worker
-if ("serviceWorker" in navigator) {
-    alert("i am here")
+if ("serviceWorker" in navigator) {  
     send().catch(err => console.error(err));
 }
 else {
@@ -15,7 +14,7 @@ else {
 async function send() {
     // Register Service Worker
     console.log("Registering service worker...");
-    alert("Registering service worker...")
+   
     const register = await navigator.serviceWorker.register("/worker.js", {
         scope: "/"
     });
