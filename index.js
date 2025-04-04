@@ -37,6 +37,9 @@ app.post("/subscribe", (req, res) => {
         .catch(err => console.error(err));
 });
 
-const port = 5000;
+/*const port = 5000;
 
+app.listen(port, () => console.log(`Server started on port ${port}`));*/
+//for herokku
+const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Server started on port ${port}`));
