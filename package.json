@@ -1,0 +1,21 @@
+{
+  "name": "nodejs-webpush-project",
+  "version": "0.0.0",
+  "description": "NodejsWebpushProject",
+  "main": "server.js",
+  "author": "",
+  "devDependencies": {
+    "eslint": "^8.21.0"
+  },
+  "eslintConfig": {},
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "express": "^5.1.0",
+    "web-push": "^3.6.7"
+  }
+}
