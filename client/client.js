@@ -29,9 +29,11 @@ async function send() {
     const subscription = await register.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
-    }).catch((err) => { return console.log('Web Push] Registration Error:', err) });
+    });
+//        .catch((err) => { return console.log('Web Push] Registration Error:', err) });
     console.log("Push Registered...");
     alert("Push Registered...");
+    alert("Sending Push...");
     // Send Push Notification
     console.log("Sending Push...");
     await fetch("/subscribe", {
