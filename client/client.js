@@ -1,35 +1,37 @@
 const publicVapidKey =
     "BKCOr589xStA1gSVk_RDKlbtgnqSYxDWLcy6CJVFq7Bep9sqzS5rwM75RIZIiSBbhfkEtm38R7RFrjyk6-9F4yY";
    
-
+alert('here');
 // Check for service worker
-if ("serviceWorker" in navigator) {  
+if ("serviceWorker" in navigator) { 
+    alert('calling send');
     send().catch(err => console.error(err));
 }
 else {
-    alert("am not here")
+    alert("am not here");
 }
 
 // Register SW, Register Push, Send Push
 async function send() {
     // Register Service Worker
     console.log("Registering service worker...");
-   
+    alert("Registering service worker..");
     const register = await navigator.serviceWorker.register("/worker.js", {
         scope: "/"
     }).catch((err) => { return console.log('[Service Worker] Registration Error:', err) })
     console.log('[Service Worker] Registered. Scope::', register.scope);
-
+    alert('[Service Worker] Registered. Scope::', register.scope);
     console.log("Service Worker Registered...");
     await navigator.serviceWorker.ready; // Here's the waiting
     // Register Push
     console.log("Registering Push...");
+    alert("Registering Push...");
     const subscription = await register.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
     }).catch((err) => { return console.log('Web Push] Registration Error:', err) });
     console.log("Push Registered...");
-
+    alert("Push Registered...");
     // Send Push Notification
     console.log("Sending Push...");
     await fetch("/subscribe", {
@@ -40,6 +42,7 @@ async function send() {
         }
     });
     console.log("Push Sent...");
+   alert("Push Sent...");
 }
 
 function urlBase64ToUint8Array(base64String) {
