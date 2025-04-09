@@ -29,8 +29,7 @@ async function send() {
     const subscription = await register.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
-    });
-//        .catch((err) => { return console.log('Web Push] Registration Error:', err) });
+    }).catch((err) => { return console.log('Web Push] Registration Error:', err) });
     console.log("Push Registered...");
     alert("Push Registered...");
     alert("Sending Push...");
@@ -48,6 +47,7 @@ async function send() {
 }
 
 function urlBase64ToUint8Array(base64String) {
+    alert("urlBase64ToUint8Array");
     const padding = "=".repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding)
         .replace(/\-/g, "+")
@@ -59,5 +59,6 @@ function urlBase64ToUint8Array(base64String) {
     for (let i = 0; i < rawData.length; ++i) {
         outputArray[i] = rawData.charCodeAt(i);
     }
+    alert("outputArray");
     return outputArray;
 }
