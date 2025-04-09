@@ -17,15 +17,17 @@ async function send() {
    
     const register = await navigator.serviceWorker.register("/worker.js", {
         scope: "/"
-    });
-    console.log("Service Worker Registered...");
+    }).catch((err) => { return console.log('[Service Worker] Registration Error:', err) })
+    console.log('[Service Worker] Registered. Scope:', serviceWorkerRegistration.scope);
 
+    console.log("Service Worker Registered...");
+    await navigator.serviceWorker.ready; // Here's the waiting
     // Register Push
     console.log("Registering Push...");
     const subscription = await register.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
-    });
+    }).catch((err) => { return console.log('Web Push] Registration Error:', err) });
     console.log("Push Registered...");
 
     // Send Push Notification
