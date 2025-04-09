@@ -18,7 +18,7 @@ async function send() {
     const register = await navigator.serviceWorker.register("/worker.js", {
         scope: "/"
     }).catch((err) => { return console.log('[Service Worker] Registration Error:', err) })
-    console.log('[Service Worker] Registered. Scope:', serviceWorkerRegistration.scope);
+    console.log('[Service Worker] Registered. Scope::', register.scope);
 
     console.log("Service Worker Registered...");
     await navigator.serviceWorker.ready; // Here's the waiting
