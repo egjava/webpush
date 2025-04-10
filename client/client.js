@@ -19,12 +19,31 @@ const check = () => {
     }
     if (!("PushManager" in window)) {
         alert("No Push API Support!");
+       /* if (!isPushManagerActive(pushManager)) {
+            return;
+        }*/
         throw new Error("No Push API Support!");
     }
     else {
         alert("PushManager ready");
     }
 };
+
+function isPushManagerActive(pushManager) {
+    if (!pushManager) {
+        if (!window.navigator.standalone) {
+            document.getElementById('add-to-home-screen').style.display = 'block';
+        } else {
+            throw new Error('PushManager is not active');
+        }
+        document.getElementById('subscribe_btn').style.display = 'none';
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
 const registerServiceWorker = async () => {
     alert("inside registerservicworker");
       const swRegistration = await navigator.serviceWorker.register("/worker.js");
@@ -34,16 +53,21 @@ const registerServiceWorker = async () => {
     //const registration = await navigator.serviceWorker.ready; // Here's the waiting
     await navigator.serviceWorker.ready;
     alert('register ready')
-    if (!swRegistration.pushManager) {
+    let pushManager = swRegistration.pushManager;
+    if (!isPushManagerActive(pushManager)) {
+        alert("no pushmanager");
+        return;
+    }
+    /*if (!swRegistration.pushManager) {
         alert("not registered pushmanager")
         throw { errorCode: "PushManagerUnavailable" };
     } else {
         alert("registered pushmanager")
-    }
+    }*/
     // Register Push
     console.log("Registering Push...");
     alert("Registering Push...");
-    const subscription = await swRegistration.pushManager.subscribe({
+    const subscription = await pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
     }).catch((err) => { return console.log('Web Push] Registration Error:', err) });
