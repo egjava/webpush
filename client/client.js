@@ -2,8 +2,63 @@ const publicVapidKey =
     "BKCOr589xStA1gSVk_RDKlbtgnqSYxDWLcy6CJVFq7Bep9sqzS5rwM75RIZIiSBbhfkEtm38R7RFrjyk6-9F4yY";
    
 alert('here');
+const main = async () => {
+    alert("inside main")
+    check();
+    const permission = await requestNotificationPermission();
+    const swRegistration = await registerServiceWorker();
+};
+const check = () => {
+    alert("inside check")
+    if (!("serviceWorker" in navigator)) {
+        alert("No Service Worker support!");
+        throw new Error("No Service Worker support!");
+    }
+    else {
+        alert("serviceworker ready");
+    }
+    if (!("PushManager" in window)) {
+        alert("No Push API Support!");
+        throw new Error("No Push API Support!");
+    }
+    else {
+        alert("PushManager ready");
+    }
+};
+const registerServiceWorker = async () => {
+    alert("inside registerservicworker");
+      const swRegistration = await navigator.serviceWorker.register("/worker.js");
+    console.log('[Service Worker] Registered. Scope::', swRegistration.scope);
+    alert('[Service Worker] Registered. Scope::', swRegistration.scope);
+    console.log("Service Worker Registered...");
+    //const registration = await navigator.serviceWorker.ready; // Here's the waiting
+    await navigator.serviceWorker.ready;
+    alert('register ready')
+    if (!swRegistration.pushManager) {
+        alert("not registered pushmanager")
+        throw { errorCode: "PushManagerUnavailable" };
+    } else {
+        alert("registered pushmanager")
+    }
+    // Register Push
+    console.log("Registering Push...");
+    alert("Registering Push...");
+    const subscription = await swRegistration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+    }).catch((err) => { return console.log('Web Push] Registration Error:', err) });
+    console.log("Push Registered...");
+    alert("Push Registered...");
+    alert("Sending Push...");
+    // Send Push Notification
+    const response = await saveSubscription(subscription);
+    console.log(response);
+    console.log("Push Sent...");
+    alert("Push Sent...");
+    // return swRegistration;
+};
 // Check for service worker
-if ("serviceWorker" in navigator) { 
+/*if ("serviceWorker" in navigator) { 
     alert('calling send');
     send().catch(err => console.error(err));
 }
@@ -52,8 +107,57 @@ async function send() {
     });
     console.log("Push Sent...");
    alert("Push Sent...");
-}
+}*/
+const saveSubscription = async subscription => {
+    alert('calling save subscription');
+    //const SERVER_URL = `${hostName}/subscribe`;
+    const response = await fetch("/subscribe", {
+        method: "POST",
+        body: JSON.stringify(subscription),
+        headers: {
+            "content-type": "application/json"
+        }
+    });
+   /* const response = await fetch(SERVER_URL, {
+        method: "post",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(subscription)
+    });*/
+    return response.json();
+};
 
+
+const requestNotificationPermission = async () => {
+    alert("inside requestNotificationPermission");
+    const permission = await window.Notification.requestPermission();
+    console.log("permission", permission);
+    // value of permission can be 'granted', 'default', 'denied'
+    // granted: user has accepted the request
+    // default: user has dismissed the notification permission popup by clicking on x
+    // denied: user has denied the request.
+    if (permission !== "granted") {
+        alert("permission not granted");
+        throw new Error("Permission not granted for Notification");
+    }
+};
+
+const send = async () => {
+    alert("inside send")
+   // const SERVER_URL = `${hostName}/send-notification`;
+   // console.log("Server_url send****", SERVER_URL)
+    const response = await fetch("/send-notification", {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+    });
+    
+    return response.json();
+
+};
 function urlBase64ToUint8Array(base64String) {
     alert("urlBase64ToUint8Array");
     const padding = "=".repeat((4 - base64String.length % 4) % 4);

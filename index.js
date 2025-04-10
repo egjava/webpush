@@ -19,14 +19,22 @@ webpush.setVapidDetails(
     publicVapidKey,
     privateVapidKey
 );
-
+const dummyDb = { subscription: null } //dummy in memory store
+const saveToDatabase = async subscription => {
+    // Since this is a demo app, I am going to save this in a dummy in memory store. Do not do this in your apps.
+    // Here you should be writing your db logic to save it.
+    dummyDb.subscription = subscription
+}
 // Subscribe Route
 app.post("/subscribe", (req, res) => {
     // Get pushSubscription object
     const subscription = req.body;
-    console.log("Subscription*****",subscription)
+    console.log("Subscription*****", subscription)
+    dummyDb.subscription = subscription
+    //const saved = await saveToDatabase(subscription) //Method to save the subscription to Database
+    console.log("saved")
     // Send 201 - resource created
-    res.status(201).json({});
+   // res.status(201).json({});
 
     // Create payload
     const payload = JSON.stringify({ title: "Push Test by Elizabeth", message:"Elizabeth please check your email"});
@@ -36,7 +44,18 @@ app.post("/subscribe", (req, res) => {
         .sendNotification(subscription, payload)
         .catch(err => console.error(err));
 });
-
+//function to send the notification to the subscribed device
+const sendNotification = (subscription, dataToSend) => {
+    webpush.sendNotification(subscription, dataToSend)
+}
+app.get('/send-notification', async (req, res) => {
+    console.log("send-notification")
+    const subscription = dummyDb.subscription //get subscription from your databse here.
+    console.log("subscription***", subscription);
+    const payload = JSON.stringify({ title: "Second Push Test by Elizabeth", message: "Elizabeth please check your email" });
+    sendNotification(subscription, payload)
+    res.json({ message: 'message sent' })
+})
 /*const port = 5000;
 
 app.listen(port, () => console.log(`Server started on port ${port}`));*/
