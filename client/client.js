@@ -23,8 +23,12 @@ async function send() {
     alert('[Service Worker] Registered. Scope::', register.scope);
     console.log("Service Worker Registered...");
     const registration = await navigator.serviceWorker.ready; // Here's the waiting
+    alert('registration***',registration)
     if (!registration.pushManager) {
+        alert("not registered pushmanager")
         throw { errorCode: "PushManagerUnavailable" };
+    } else {
+        alert("registered pushmanager")
     }
     // Register Push
     console.log("Registering Push...");
