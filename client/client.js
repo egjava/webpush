@@ -22,9 +22,10 @@ async function send() {
     console.log('[Service Worker] Registered. Scope::', register.scope);
     alert('[Service Worker] Registered. Scope::', register.scope);
     console.log("Service Worker Registered...");
-    const registration = await navigator.serviceWorker.ready; // Here's the waiting
-    alert('registration***',registration)
-    if (!registration.pushManager) {
+    //const registration = await navigator.serviceWorker.ready; // Here's the waiting
+    await navigator.serviceWorker.ready;
+    alert('register ready')
+    if (!register.pushManager) {
         alert("not registered pushmanager")
         throw { errorCode: "PushManagerUnavailable" };
     } else {
@@ -33,7 +34,7 @@ async function send() {
     // Register Push
     console.log("Registering Push...");
     alert("Registering Push...");
-    const subscription = await registration.pushManager.subscribe({
+    const subscription = await register.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
     }).catch((err) => { return alert('Web Push] Registration Error:', err) });
