@@ -187,7 +187,7 @@ const requestNotificationPermission = async () => {
     });
     if (permission !== "granted") {
         alert("permission not granted");
-        throw new Error("Permission not granted for Notification");
+        //throw new Error("Permission not granted for Notification");
     }
 };
 
