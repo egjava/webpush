@@ -1,0 +1,11 @@
+{
+  "name": "Push Notification Sample",
+  "short_name": "Push Notification Sample",
+  "description": "A sample project for push notifications with Next.js",
+  "theme_color": "#FFFFFF",
+  "background_color": "#FFFFFF",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "icons": "https://gateaccess.org/images/ga_logo.svg"
+}
