@@ -165,10 +165,26 @@ const requestNotificationPermission = async () => {
     alert("inside requestNotificationPermission");
     const permission = await window.Notification.requestPermission();
     console.log("permission", permission);
+    switch (permission) {
+        case 'prompt':
+            alert("prompt");
+            break;
+        case 'granted':
+            alert("granted");
+            break;
+        case 'denied':
+            alert('User denied push permission');
+        case 'default':
+            alert('default');
+    }
     // value of permission can be 'granted', 'default', 'denied'
     // granted: user has accepted the request
     // default: user has dismissed the notification permission popup by clicking on x
     // denied: user has denied the request.
+    
+    Notification.requestPermission().then(function (permission) {
+        console.log('permiss', permission)
+    });
     if (permission !== "granted") {
         alert("permission not granted");
         throw new Error("Permission not granted for Notification");
