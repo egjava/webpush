@@ -18,7 +18,7 @@ const check = () => {
         alert("serviceworker ready");
         console.log("serviceworker:", navigator.serviceWorker);
     }
-    if (!("PushManager" in window)) {
+   /* if (!("PushManager" in window)) {
         alert("No Push API Support!");
         if (!isPushManagerActive(pushManager)) {
             alert("not active return");
@@ -28,7 +28,7 @@ const check = () => {
     }
     else {
         alert("PushManager ready");
-    }
+    }*/
 };
 
 function isPushManagerActive(pushManager) {
