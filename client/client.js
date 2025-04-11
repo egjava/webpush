@@ -16,12 +16,14 @@ const check = () => {
     }
     else {
         alert("serviceworker ready");
+        console.log("serviceworker:", navigator.serviceWorker);
     }
     if (!("PushManager" in window)) {
         alert("No Push API Support!");
-       /* if (!isPushManagerActive(pushManager)) {
+        if (!isPushManagerActive(pushManager)) {
+            alert("not active return");
             return;
-        }*/
+        }
         throw new Error("No Push API Support!");
     }
     else {
@@ -30,13 +32,17 @@ const check = () => {
 };
 
 function isPushManagerActive(pushManager) {
+    alert("isPushmanager");
     if (!pushManager) {
         if (!window.navigator.standalone) {
-            document.getElementById('add-to-home-screen').style.display = 'block';
+            alert("inside standalone");
+            //document.getElementById('add-to-home-screen').style.display = 'block';
         } else {
+            alert("PushManager not active");
             throw new Error('PushManager is not active');
         }
-        document.getElementById('subscribe_btn').style.display = 'none';
+        alert("before subscribebtn");
+       // document.getElementById('subscribe_btn').style.display = 'none';
         return false;
     } else {
         return true;
@@ -51,9 +57,11 @@ const registerServiceWorker = async () => {
     alert('[Service Worker] Registered. Scope::', swRegistration.scope);
     console.log("Service Worker Registered...");
     //const registration = await navigator.serviceWorker.ready; // Here's the waiting
-    await navigator.serviceWorker.ready;
+   const register = await navigator.serviceWorker.ready;
     alert('register ready')
-    let pushManager = swRegistration.pushManager;
+    alert(register);
+    console.log("registereeeeeeeeee", register)
+    let pushManager = register.pushManager;
     if (!isPushManagerActive(pushManager)) {
         alert("no pushmanager");
         return;
