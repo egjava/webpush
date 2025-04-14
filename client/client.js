@@ -164,6 +164,7 @@ const saveSubscription = async subscription => {
 const requestNotificationPermission = async () => {
     alert("inside requestNotificationPermission");
     const permission = await window.Notification.requestPermission();
+  
     console.log("permission", permission);
     switch (permission) {
         case 'prompt':
@@ -183,7 +184,11 @@ const requestNotificationPermission = async () => {
     // denied: user has denied the request.
 
     Notification.requestPermission().then(function (permission) {
-        console.log('permiss', permission)
+        alert('permiss', permission)
+        if (permission !== "granted") {
+            alert("not granted inside then too");
+            //throw new Error("Permission not granted for Notification");
+        }
     });
     if (permission !== "granted") {
         alert("permission not granted");
