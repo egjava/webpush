@@ -4,9 +4,27 @@ const publicVapidKey =
 alert('here');
 const main = async () => {
     alert("inside main")
-    check();
-    const permission = await requestNotificationPermission();
-    const swRegistration = await registerServiceWorker();
+    alert(isMobileBrowser())
+    alert(isMobileBrowserTouch())
+    alert(isMobileBrowserScreenSize())
+    const isMobile = isMobileBrowser() || isMobileBrowserTouch() || isMobileBrowserScreenSize();
+
+    if (isMobile) {
+        console.log('Mobile browser');
+        alert("MoBile Browser")
+        check();
+        const permission = await requestNotificationPermission();
+        alert("permission in main", permission)
+        if (permission === "granted") {
+            alert("calling subscribeuser");
+            //const swRegistration = await registerServiceWorker();
+            await subscribeUser();
+        }
+    } else {
+        alert("Desktop browser")
+        console.log('Desktop browser');
+    }
+   
 };
 const check = () => {
     alert("inside check")
@@ -49,6 +67,144 @@ function isPushManagerActive(pushManager) {
     }
 }
 
+/*self.addEventListener("pushsubscriptionchange", event => {
+    alert("push subscription change event")
+    const swRegistration = navigator.serviceWorker.ready;
+    
+    event.waitUntil(swRegistration.pushManager.subscribe(event.oldSubscription.options)
+        .then(subscription => {
+            alert(event.oldSubscription.options);
+            return fetch("/subscribe", {
+                method: "post",
+                headers: {
+                    "Content-type": "application/json"
+                },
+                body: JSON.stringify({
+                    endpoint: subscription.endpoint
+                })
+            });
+        })
+    );
+}, false);*/
+
+/*self.addEventListener(
+    "pushsubscriptionchange",
+    (event) => {
+        alert("subscription change event");
+        const conv = (val) =>
+            self.btoa(String.fromCharCode.apply(null, new Uint8Array(val)));
+        const getPayload = (subscription) => ({
+            endpoint: subscription.endpoint,
+            publicKey: conv(subscription.getKey("p256dh")),
+            authToken: conv(subscription.getKey("auth")),
+        });
+
+        const subscription = self.registration.pushManager
+            .subscribe(event.oldSubscription.options)
+            .then((subscription) =>
+                fetch("/register", {
+                    method: "post",
+                    headers: {
+                        "Content-type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        old: getPayload(event.oldSubscription),
+                        new: getPayload(subscription),
+                    }),
+                }),
+            );
+        event.waitUntil(subscription);
+    },
+    false,
+);*/
+//function subscribeUser() {
+const subscribeUser = async () => {
+    alert("inside subscribeuser")
+    const swRegistration = await navigator.serviceWorker.register("/worker.js");
+    const browserName = getBrowserName();
+    console.log("browsername", browserName)
+    navigator.serviceWorker.ready
+        .then(registration => {          
+            let pushManager = registration.pushManager;
+            if (!isPushManagerActive(pushManager)) {
+                alert("no pushmanager");
+                return;
+            }
+            else {
+                registration.pushManager.getSubscription()
+                    .then(pushSubscription => {
+                        console.log(pushSubscription);
+                        if (!pushSubscription) {
+                            //the user was never subscribed
+                            alert("user neveer subscribed");
+                            //call unsubscribe incase if user deleted history/cookies
+                            unsubscribe("235", browserName)
+                            subscribe(registration);
+                        }
+                        else {
+                            alert("check if user was subscribed with different key");
+                            //check if user was subscribed with a different key
+                            let json = pushSubscription.toJSON();
+                            let public_key = json.keys.p256dh;
+                            console.log("json****", json)
+                            console.log(public_key);
+                            let oldPublicKey
+                            getEndpointKey("235", browserName).then(result => {
+                                // This block executes when the promise is resolved
+                                oldPublicKey = result.keys;
+                                console.log(oldPublicKey); // Output: Data fetched successfully
+                                return oldPublicKey; // You can return a new value for chaining
+                            }).then(oldPublicKey => {
+                                // window.setTimeout("getEndpointKey();", 100);
+                                console.log("oldPublicKey", oldPublicKey)
+                                if (public_key != oldPublicKey) {
+                                    pushSubscription.unsubscribe().then(successful => {
+                                        console.log("call unsubscribe");
+                                        unsubscribe("235", browserName)
+                                        // You've successfully unsubscribed
+                                        subscribe(registration);
+                                    }).catch(e => {
+                                        console.log("unsubscription failed")
+                                        // Unsubscription failed
+                                    })
+                                }
+                            });
+                        }
+                    });
+            }
+        })
+}
+
+//function subscribe(registration) {
+const subscribe = async (registration) => {
+    registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+    })
+        .then(pushSubscription => {
+            //successfully subscribed to push
+            //save it to your DB etc....
+            console.log("Push Registered...");
+            alert("Push Registered...");
+            alert("Sending Push...");
+            // Send Push Notification
+            const response = saveSubscription(pushSubscription);
+            console.log(response);
+            console.log("Push Sent...");
+            alert("Push Sent...");
+        });
+}
+
+const unsubscribe = async (userID, browserName) => {
+    const url = `/unsubscribe?userID=${userID}&browser=${browserName}`
+    const response = fetch(url, {
+        method: "DELETE",       
+        headers: {
+            "content-type": "application/json"
+        }
+    });
+    return response.json;
+}
 
 const registerServiceWorker = async () => {
     alert("inside registerservicworker");
@@ -83,7 +239,7 @@ const registerServiceWorker = async () => {
     alert("Push Registered...");
     alert("Sending Push...");
     // Send Push Notification
-    const response = await saveSubscription(subscription);
+    const response = saveSubscription(subscription);
     console.log(response);
     console.log("Push Sent...");
     alert("Push Sent...");
@@ -143,9 +299,12 @@ async function send() {
 const saveSubscription = async subscription => {
     alert('calling save subscription');
     //const SERVER_URL = `${hostName}/subscribe`;
+    const browserName = getBrowserName();
+    console.log("browserName**", browserName);
+    alert(browserName);
     const response = await fetch("/subscribe", {
         method: "POST",
-        body: JSON.stringify(subscription),
+        body: JSON.stringify({ subscription, browserName }),
         headers: {
             "content-type": "application/json"
         }
@@ -161,10 +320,97 @@ const saveSubscription = async subscription => {
 };
 
 
+function getBrowserName (){
+    const userAgent = navigator.userAgent;
+    alert(userAgent)
+    console.log("user Agent", userAgent)
+    let data = "";
+    if (userAgent.includes("Edg")) {
+        data = "Microsoft Edge";
+        return data;
+    }
+    else if (userAgent.includes("Firefox")) {
+        alert("firefox");
+        data = "Mozilla Firefox";
+        return data;
+    } else if (userAgent.includes("Chrome")) {
+        data = "Google Chrome";
+        return data;        
+    } else if (userAgent.includes("Safari")) {
+        data = "Apple Safari";
+        return data;      
+    } else if (userAgent.includes("MSIE") || userAgent.includes("Trident")) {
+        data = "Microsoft Internet Explorer";
+        return data;          
+    } else {
+        return "Unknown Browser";
+    }
+}
+
+const getEndpointKey = async (userID, browserName) => {
+    alert('calling get subscription');
+    alert(browserName);
+    //const SERVER_URL = `${hostName}/subscribe`;
+    const url = `/get?userID=${userID}&browser=${browserName}`;
+    let dataReceived = ""; 
+    await fetch(url, {
+        method: "GET",
+        //body: JSON.stringify(subscription),
+        headers: {
+            "content-type": "application/json"
+        }
+    }).then(resp => {
+        if (resp.status === 200) {
+            console.log("status is 200")
+            return resp.json()
+        } else {
+            console.log("Status: " + resp.status)
+            return Promise.reject("server")
+        }
+    })
+        .then(dataJson => {
+            dataReceived = JSON.parse(dataJson)
+        })
+        .catch(err => {
+            if (err === "server") return
+            console.log(err)
+        })
+    console.log("Received:",dataReceived)   
+   /* if (response.status === 200) {
+        console.log("response status is 200", response.json())
+        return response.json()
+    } 
+    console.log("responseeeeeeee", JSON.parse(response))
+    console.log("responseeeeeee dataaa", response.data)
+    /*return new Promise(resolve => {
+        setTimeout(() => {
+            const data = response;
+            alert(data)
+            console.log("data****",data)
+            resolve(data);
+        }, 1000);
+    });*/
+   // return response.data;
+   // return await response.json();
+    //console.log("data", data)
+   
+    //return data;
+    /* const response = await fetch(SERVER_URL, {
+         method: "post",
+         headers: {
+             "Content-Type": "application/json"
+         },
+         body: JSON.stringify(subscription)
+     });*/
+
+    return dataReceived;
+};
+
 const requestNotificationPermission = async () => {
     alert("inside requestNotificationPermission");
     const permission = await window.Notification.requestPermission();
-  
+    //const permission = await Push.Permission.get();
+    alert(permission);
     console.log("permission", permission);
     switch (permission) {
         case 'prompt':
@@ -194,6 +440,7 @@ const requestNotificationPermission = async () => {
         alert("permission not granted");
         //throw new Error("Permission not granted for Notification");
     }
+    return permission;
 };
 
 const send = async () => {
@@ -227,3 +474,22 @@ function urlBase64ToUint8Array(base64String) {
     alert("outputArray");
     return outputArray;
 }
+function isMobileBrowser() {
+    alert(navigator.userAgent)
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        return true;
+    }
+    return false;
+}
+
+function isMobileBrowserTouch() {
+    alert(navigator.maxTouchPoints)
+    alert(window)
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+}
+
+function isMobileBrowserScreenSize() {
+    alert(window.innerWidth)
+    return window.innerWidth <= 768;
+}
+
