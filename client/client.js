@@ -408,8 +408,9 @@ const getEndpointKey = async (userID, browserName) => {
 
 const requestNotificationPermission = async () => {
     alert("inside requestNotificationPermission");
-    const permission = await window.Notification.requestPermission();
+    //const permission = await window.Notification.requestPermission();
     //const permission = await Push.Permission.get();
+    const permission = await Notification.permission;
     alert(permission);
     console.log("permission", permission);
     switch (permission) {
@@ -421,15 +422,17 @@ const requestNotificationPermission = async () => {
             break;
         case 'denied':
             alert('User denied push permission');
+            break;
         case 'default':
             alert('default');
+            break;
     }
     // value of permission can be 'granted', 'default', 'denied'
     // granted: user has accepted the request
     // default: user has dismissed the notification permission popup by clicking on x
     // denied: user has denied the request.
 
-    Notification.requestPermission().then(function (permission) {
+   /* Notification.requestPermission().then(function (permission) {
         alert('permiss', permission)
         if (permission !== "granted") {
             alert("not granted inside then too");
@@ -439,7 +442,7 @@ const requestNotificationPermission = async () => {
     if (permission !== "granted") {
         alert("permission not granted");
         //throw new Error("Permission not granted for Notification");
-    }
+    }*/
     return permission;
 };
 
