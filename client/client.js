@@ -15,8 +15,8 @@ const main = async () => {
         check();
         const permission = await requestNotificationPermission();
         alert("permission in main", permission)
-        if (permission === "granted") {
-            alert("calling subscribeuser");
+        if (permission != "granted") {
+            alert("not granted but calling subscribeuser");
             //const swRegistration = await registerServiceWorker();
             await subscribeUser();
         }
@@ -432,7 +432,7 @@ const requestNotificationPermission = async () => {
     // default: user has dismissed the notification permission popup by clicking on x
     // denied: user has denied the request.
 
-   /* Notification.requestPermission().then(function (permission) {
+    Notification.requestPermission().then(function (permission) {
         alert('permiss', permission)
         if (permission !== "granted") {
             alert("not granted inside then too");
@@ -442,7 +442,7 @@ const requestNotificationPermission = async () => {
     if (permission !== "granted") {
         alert("permission not granted");
         //throw new Error("Permission not granted for Notification");
-    }*/
+    }
     return permission;
 };
 
