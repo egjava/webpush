@@ -1,182 +1,78 @@
 const publicVapidKey =
     "BKCOr589xStA1gSVk_RDKlbtgnqSYxDWLcy6CJVFq7Bep9sqzS5rwM75RIZIiSBbhfkEtm38R7RFrjyk6-9F4yY";
 
-alert('here');
-const main = async () => {
-    alert("inside main")
-    alert(isMobileBrowser())
-    alert(isMobileBrowserTouch())
-    alert(isMobileBrowserScreenSize())
+const main = async () => {  
     const isMobile = isMobileBrowser() || isMobileBrowserTouch() || isMobileBrowserScreenSize();
-
-    if (isMobile) {
-        console.log('Mobile browser');
-        alert("MoBile Browser")
-        check();
-        const permission = await requestNotificationPermission();
-        alert("permission in main", permission)
-        if (permission != "granted") {
-            alert("not granted but calling subscribeuser");
-            //const swRegistration = await registerServiceWorker();
-            await subscribeUser();
-        }
-    } else {
-        alert("Desktop browser")
+    if (isMobile) {     
+        check();       
+    } else {       
         console.log('Desktop browser');
-    }
-   
+    }   
 };
-const check = () => {
-    alert("inside check")
-    if (!("serviceWorker" in navigator)) {
-        alert("No Service Worker support!");
+const check = () => {   
+    if (!("serviceWorker" in navigator)) {       
         throw new Error("No Service Worker support!");
     }
-    else {
-        alert("serviceworker ready");
-        console.log("serviceworker:", navigator.serviceWorker);
-    }
-     if (!("PushManager" in window)) {
-         alert("No Push API Support!");
-         if (!isPushManagerActive(pushManager)) {
-             alert("not active return");
+   
+     if (!("PushManager" in window)) {       
+         if (!isPushManagerActive(pushManager)) {            
              return;
          }
          throw new Error("No Push API Support!");
-     }
-     else {
-         alert("PushManager ready");
-     }
+     }     
 };
-/*document.getElementById('permission-btn').addEventListener('click', function () {
-//$(document).on('click', function () {
-    alert("clicked here")
-    const permiss = requestNotificationPermission();
-    if (permiss === "granted") {
-        alert("granted but calling subscribeuser");
-        //const swRegistration = await registerServiceWorker();
-        subscribeUser();
-    }
-    // Remove the event listener after the permission is requested
-   // $(document).off('click');
-});*/
-function isPushManagerActive(pushManager) {
-    alert("isPushmanager");
+
+function isPushManagerActive(pushManager) {   
     if (!pushManager) {
-        if (!window.navigator.standalone) {
-            alert("inside standalone");
+        if (!window.navigator.standalone) {           
             //document.getElementById('add-to-home-screen').style.display = 'block';
-        } else {
-            alert("PushManager not active");
+        } else {           
             throw new Error('PushManager is not active');
         }
-        alert("before subscribebtn");
-        // document.getElementById('subscribe_btn').style.display = 'none';
         return false;
     } else {
         return true;
     }
 }
 
-/*self.addEventListener("pushsubscriptionchange", event => {
-    alert("push subscription change event")
-    const swRegistration = navigator.serviceWorker.ready;
-    
-    event.waitUntil(swRegistration.pushManager.subscribe(event.oldSubscription.options)
-        .then(subscription => {
-            alert(event.oldSubscription.options);
-            return fetch("/subscribe", {
-                method: "post",
-                headers: {
-                    "Content-type": "application/json"
-                },
-                body: JSON.stringify({
-                    endpoint: subscription.endpoint
-                })
-            });
-        })
-    );
-}, false);*/
-
-/*self.addEventListener(
-    "pushsubscriptionchange",
-    (event) => {
-        alert("subscription change event");
-        const conv = (val) =>
-            self.btoa(String.fromCharCode.apply(null, new Uint8Array(val)));
-        const getPayload = (subscription) => ({
-            endpoint: subscription.endpoint,
-            publicKey: conv(subscription.getKey("p256dh")),
-            authToken: conv(subscription.getKey("auth")),
-        });
-
-        const subscription = self.registration.pushManager
-            .subscribe(event.oldSubscription.options)
-            .then((subscription) =>
-                fetch("/register", {
-                    method: "post",
-                    headers: {
-                        "Content-type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        old: getPayload(event.oldSubscription),
-                        new: getPayload(subscription),
-                    }),
-                }),
-            );
-        event.waitUntil(subscription);
-    },
-    false,
-);*/
-//function subscribeUser() {
-const subscribeUser = async () => {
-    alert("inside subscribeuser")
+const subscribeUser = async () => {   
     const swRegistration = await navigator.serviceWorker.register("/worker.js");
-    const browserName = getBrowserName();
-    console.log("browsername", browserName)
+    const browserName = getBrowserName(); 
     navigator.serviceWorker.ready
         .then(registration => {          
             let pushManager = registration.pushManager;
-            if (!isPushManagerActive(pushManager)) {
-                alert("no pushmanager");
+            if (!isPushManagerActive(pushManager)) {              
                 return;
             }
             else {
                 registration.pushManager.getSubscription()
                     .then(pushSubscription => {
-                        console.log(pushSubscription);
+                        let oldPublicKey = "";                       
                         if (!pushSubscription) {
-                            //the user was never subscribed
-                            alert("user neveer subscribed");
-                            //call unsubscribe incase if user deleted history/cookies
-                            unsubscribe("235", browserName)
-                            subscribe(registration);
+                            //the user was never subscribed                              
+                            getEndpointKey("235", browserName).then(result => {
+                                oldPublicKey = result.keys;                              
+                                return oldPublicKey; 
+                            }).then(oldPublicKey => {
+                                if (!oldPublicKey) {                                 
+                                    unsubscribe("235", browserName)                                   
+                                }
+                                subscribe(registration);
+                            });
                         }
                         else {
-                            alert("check if user was subscribed with different key");
-                            //check if user was subscribed with a different key
                             let json = pushSubscription.toJSON();
-                            let public_key = json.keys.p256dh;
-                            console.log("json****", json)
-                            console.log(public_key);
-                            let oldPublicKey
-                            getEndpointKey("235", browserName).then(result => {
-                                // This block executes when the promise is resolved
-                                oldPublicKey = result.keys;
-                                console.log(oldPublicKey); // Output: Data fetched successfully
-                                return oldPublicKey; // You can return a new value for chaining
-                            }).then(oldPublicKey => {
-                                // window.setTimeout("getEndpointKey();", 100);
-                                console.log("oldPublicKey", oldPublicKey)
+                            let public_key = json.keys.p256dh;                         
+                            getEndpointKey("235", browserName).then(result => {                                
+                                oldPublicKey = result.keys;                             
+                                return oldPublicKey; 
+                            }).then(oldPublicKey => {                               
                                 if (public_key != oldPublicKey) {
-                                    pushSubscription.unsubscribe().then(successful => {
-                                        console.log("call unsubscribe");
-                                        unsubscribe("235", browserName)
-                                        // You've successfully unsubscribed
+                                    pushSubscription.unsubscribe().then(successful => {                                     
+                                        unsubscribe("235", browserName)                                       
                                         subscribe(registration);
                                     }).catch(e => {
-                                        console.log("unsubscription failed")
-                                        // Unsubscription failed
+                                        console.log("unsubscription failed")                                       
                                     })
                                 }
                             });
@@ -186,23 +82,15 @@ const subscribeUser = async () => {
         })
 }
 
-//function subscribe(registration) {
+
 const subscribe = async (registration) => {
     registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
     })
-        .then(pushSubscription => {
-            //successfully subscribed to push
-            //save it to your DB etc....
-            console.log("Push Registered...");
-            alert("Push Registered...");
-            alert("Sending Push...");
+        .then(pushSubscription => {          
             // Send Push Notification
-            const response = saveSubscription(pushSubscription);
-            console.log(response);
-            console.log("Push Sent...");
-            alert("Push Sent...");
+            const response = saveSubscription(pushSubscription);          
         });
 }
 
@@ -217,131 +105,45 @@ const unsubscribe = async (userID, browserName) => {
     return response.json;
 }
 
-const registerServiceWorker = async () => {
-    alert("inside registerservicworker");
+const registerServiceWorker = async () => {   
     const swRegistration = await navigator.serviceWorker.register("/worker.js");
-    console.log('[Service Worker] Registered. Scope::', swRegistration.scope);
-    alert('[Service Worker] Registered. Scope::', swRegistration.scope);
-    console.log("Service Worker Registered...");
-    //const registration = await navigator.serviceWorker.ready; // Here's the waiting
     const register = await navigator.serviceWorker.ready;
-    alert('register ready')
-    alert(register);
-    console.log("registereeeeeeeeee", register)
+   
     let pushManager = register.pushManager;
-    if (!isPushManagerActive(pushManager)) {
-        alert("no pushmanager");
+    if (!isPushManagerActive(pushManager)) {      
         return;
     }
-    /*if (!swRegistration.pushManager) {
-        alert("not registered pushmanager")
-        throw { errorCode: "PushManagerUnavailable" };
-    } else {
-        alert("registered pushmanager")
-    }*/
-    // Register Push
-    console.log("Registering Push...");
-    alert("Registering Push...");
+  
     const subscription = await pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
     }).catch((err) => { return console.log('Web Push] Registration Error:', err) });
-    console.log("Push Registered...");
-    alert("Push Registered...");
-    alert("Sending Push...");
-    // Send Push Notification
+   
     const response = saveSubscription(subscription);
-    console.log(response);
-    console.log("Push Sent...");
-    alert("Push Sent...");
-    // return swRegistration;
+   
 };
-// Check for service worker
-/*if ("serviceWorker" in navigator) { 
-    alert('calling send');
-    send().catch(err => console.error(err));
-}
-else {
-    alert("am not here");
-}
 
-// Register SW, Register Push, Send Push
-async function send() {
-    // Register Service Worker
-    console.log("Registering service worker...");
-    alert("Registering service worker..");
-    const register = await navigator.serviceWorker.register("/worker.js", {
-        scope: "/"
-    }).catch((err) => { return console.log('[Service Worker] Registration Error:', err) })
-    console.log('[Service Worker] Registered. Scope::', register.scope);
-    alert('[Service Worker] Registered. Scope::', register.scope);
-    console.log("Service Worker Registered...");
-    //const registration = await navigator.serviceWorker.ready; // Here's the waiting
-    await navigator.serviceWorker.ready;
-    alert('register ready')
-    if (!register.pushManager) {
-        alert("not registered pushmanager")
-        throw { errorCode: "PushManagerUnavailable" };
-    } else {
-        alert("registered pushmanager")
-    }
-    // Register Push
-    console.log("Registering Push...");
-    alert("Registering Push...");
-    const subscription = await register.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
-    }).catch((err) => { return alert('Web Push] Registration Error:', err) });
-    console.log("Push Registered...");
-    alert("Push Registered...");
-    alert("Sending Push...");
-    // Send Push Notification
-    console.log("Sending Push...");
-    await fetch("/subscribe", {
-        method: "POST",
-        body: JSON.stringify(subscription),
-        headers: {
-            "content-type": "application/json"
-        }
-    });
-    console.log("Push Sent...");
-   alert("Push Sent...");
-}*/
-const saveSubscription = async subscription => {
-    alert('calling save subscription');
-    //const SERVER_URL = `${hostName}/subscribe`;
-    const browserName = getBrowserName();
-    console.log("browserName**", browserName);
-    alert(browserName);
+const saveSubscription = async subscription => {  
+    const browserName = getBrowserName();  
     const response = await fetch("/subscribe", {
         method: "POST",
         body: JSON.stringify({ subscription, browserName }),
         headers: {
             "content-type": "application/json"
         }
-    });
-    /* const response = await fetch(SERVER_URL, {
-         method: "post",
-         headers: {
-             "Content-Type": "application/json"
-         },
-         body: JSON.stringify(subscription)
-     });*/
+    });   
     return response.json();
 };
 
 
 function getBrowserName (){
-    const userAgent = navigator.userAgent;
-    alert(userAgent)
-    console.log("user Agent", userAgent)
+    const userAgent = navigator.userAgent;   
     let data = "";
     if (userAgent.includes("Edg")) {
         data = "Microsoft Edge";
         return data;
     }
-    else if (userAgent.includes("Firefox")) {
-        alert("firefox");
+    else if (userAgent.includes("Firefox")) {     
         data = "Mozilla Firefox";
         return data;
     } else if (userAgent.includes("Chrome")) {
@@ -359,23 +161,17 @@ function getBrowserName (){
 }
 
 const getEndpointKey = async (userID, browserName) => {
-    alert('calling get subscription');
-    alert(browserName);
-    //const SERVER_URL = `${hostName}/subscribe`;
     const url = `/get?userID=${userID}&browser=${browserName}`;
     let dataReceived = ""; 
     await fetch(url, {
-        method: "GET",
-        //body: JSON.stringify(subscription),
+        method: "GET",     
         headers: {
             "content-type": "application/json"
         }
     }).then(resp => {
         if (resp.status === 200) {
-            console.log("status is 200")
             return resp.json()
-        } else {
-            console.log("Status: " + resp.status)
+        } else {           
             return Promise.reject("server")
         }
     })
@@ -386,99 +182,33 @@ const getEndpointKey = async (userID, browserName) => {
             if (err === "server") return
             console.log(err)
         })
-    console.log("Received:",dataReceived)   
-   /* if (response.status === 200) {
-        console.log("response status is 200", response.json())
-        return response.json()
-    } 
-    console.log("responseeeeeeee", JSON.parse(response))
-    console.log("responseeeeeee dataaa", response.data)
-    /*return new Promise(resolve => {
-        setTimeout(() => {
-            const data = response;
-            alert(data)
-            console.log("data****",data)
-            resolve(data);
-        }, 1000);
-    });*/
-   // return response.data;
-   // return await response.json();
-    //console.log("data", data)
-   
-    //return data;
-    /* const response = await fetch(SERVER_URL, {
-         method: "post",
-         headers: {
-             "Content-Type": "application/json"
-         },
-         body: JSON.stringify(subscription)
-     });*/
 
     return dataReceived;
 };
 
 const requestNotificationPermission = async () => {
-    alert("inside requestNotificationPermission");
     const permission = await window.Notification.requestPermission();
-    //const permission = await Push.Permission.get();
-   // const permission = await Notification.permission;
-    alert(permission);
-    console.log("permission", permission);
-    switch (permission) {
-        case 'prompt':
-            alert("prompt");
-            break;
-        case 'granted':
-            alert("granted");
-            break;
-        case 'denied':
-            alert('User denied push permission');
-            break;
-        case 'default':
-            alert('default');
-            break;
-    }
-    if (permission === "granted") {
-        alert("granted but calling subscribeuser");
-        //const swRegistration = await registerServiceWorker();
+  
+    if (permission === "granted") {        
+        main();
+        check();
         await subscribeUser();
     }
-    // value of permission can be 'granted', 'default', 'denied'
-    // granted: user has accepted the request
-    // default: user has dismissed the notification permission popup by clicking on x
-    // denied: user has denied the request.
-
-    /*Notification.requestPermission().then(function (permission) {
-        alert('permiss', permission)
-        if (permission !== "granted") {
-            alert("not granted inside then too");
-            //throw new Error("Permission not granted for Notification");
-        }
-    });
-    if (permission !== "granted") {
-        alert("permission not granted");
-        //throw new Error("Permission not granted for Notification");
-    }*/
-    //return permission;
+    
 };
 
 const send = async () => {
-    alert("inside send")
-    // const SERVER_URL = `${hostName}/send-notification`;
-    // console.log("Server_url send****", SERVER_URL)
-    const response = await fetch("/send-notification", {
+     const response = await fetch("/send-notification", {
         method: "GET",
         headers: {
             "Content-Type": "application/json"
         },
-
     });
 
     return response.json();
 
 };
-function urlBase64ToUint8Array(base64String) {
-    alert("urlBase64ToUint8Array");
+function urlBase64ToUint8Array(base64String) {   
     const padding = "=".repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding)
         .replace(/\-/g, "+")
@@ -490,25 +220,20 @@ function urlBase64ToUint8Array(base64String) {
     for (let i = 0; i < rawData.length; ++i) {
         outputArray[i] = rawData.charCodeAt(i);
     }
-    alert("outputArray");
     return outputArray;
 }
-function isMobileBrowser() {
-    alert(navigator.userAgent)
+function isMobileBrowser() { 
     if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
         return true;
     }
     return false;
 }
 
-function isMobileBrowserTouch() {
-    alert(navigator.maxTouchPoints)
-    alert(window)
+function isMobileBrowserTouch() {   
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 
-function isMobileBrowserScreenSize() {
-    alert(window.innerWidth)
+function isMobileBrowserScreenSize() {   
     return window.innerWidth <= 768;
 }
 
