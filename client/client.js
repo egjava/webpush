@@ -48,7 +48,18 @@ const check = () => {
          alert("PushManager ready");
      }
 };
-
+/*document.getElementById('permission-btn').addEventListener('click', function () {
+//$(document).on('click', function () {
+    alert("clicked here")
+    const permiss = requestNotificationPermission();
+    if (permiss === "granted") {
+        alert("granted but calling subscribeuser");
+        //const swRegistration = await registerServiceWorker();
+        subscribeUser();
+    }
+    // Remove the event listener after the permission is requested
+   // $(document).off('click');
+});*/
 function isPushManagerActive(pushManager) {
     alert("isPushmanager");
     if (!pushManager) {
@@ -408,9 +419,9 @@ const getEndpointKey = async (userID, browserName) => {
 
 const requestNotificationPermission = async () => {
     alert("inside requestNotificationPermission");
-    //const permission = await window.Notification.requestPermission();
+    const permission = await window.Notification.requestPermission();
     //const permission = await Push.Permission.get();
-    const permission = await Notification.permission;
+   // const permission = await Notification.permission;
     alert(permission);
     console.log("permission", permission);
     switch (permission) {
@@ -427,12 +438,17 @@ const requestNotificationPermission = async () => {
             alert('default');
             break;
     }
+    if (permission === "granted") {
+        alert("granted but calling subscribeuser");
+        //const swRegistration = await registerServiceWorker();
+        await subscribeUser();
+    }
     // value of permission can be 'granted', 'default', 'denied'
     // granted: user has accepted the request
     // default: user has dismissed the notification permission popup by clicking on x
     // denied: user has denied the request.
 
-    Notification.requestPermission().then(function (permission) {
+    /*Notification.requestPermission().then(function (permission) {
         alert('permiss', permission)
         if (permission !== "granted") {
             alert("not granted inside then too");
@@ -442,8 +458,8 @@ const requestNotificationPermission = async () => {
     if (permission !== "granted") {
         alert("permission not granted");
         //throw new Error("Permission not granted for Notification");
-    }
-    return permission;
+    }*/
+    //return permission;
 };
 
 const send = async () => {
