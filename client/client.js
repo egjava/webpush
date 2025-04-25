@@ -3,14 +3,14 @@ const publicVapidKey =
 
 const main = async () => {  
     const isMobile = isMobileBrowser() || isMobileBrowserTouch() || isMobileBrowserScreenSize();
-   // if (isMobile) { 
+    if (isMobile) { 
         //const { v4: uuidv4 } = require('uuid');
         alert("yes its mobile")
         check();    
         await subscribeUser();
-    /*} else {       
+   } else {       
         console.log('Desktop browser');
-    }   */
+    }   
 };
 const check = () => {   
     if (!("serviceWorker" in navigator)) {       
