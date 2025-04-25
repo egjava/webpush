@@ -9,7 +9,6 @@ const app = express();
 app.use(express.static(path.join(__dirname, "client")));
 //app.use(cors())
 app.use(bodyParser.json());
-const dummyDb = { subscription: null } //dummy in memory store
 const publicVapidKey =
     "BKCOr589xStA1gSVk_RDKlbtgnqSYxDWLcy6CJVFq7Bep9sqzS5rwM75RIZIiSBbhfkEtm38R7RFrjyk6-9F4yY";
 const privateVapidKey = "O3UYIHzRdSvCooG3VaQrbnoW-V52U9lnR-FItS8_zZY";
@@ -33,17 +32,19 @@ const pushNotificationSchema = new mongoose.Schema({
     },
     userID: String,
     browser: String,
+    deviceID: String,
+    failedDate: Date,
     });
 
 
-const saveToDatabase = async (subscription, browserName) => {
+const saveToDatabase = async (subscription, browserName, deviceID) => {
     // Since this is a demo app, I am going to save this in a dummy in memory store. Do not do this in your apps.
     // Here you should be writing your db logic to save it.
     const result = null;
     try {
         let pushNotification = mongoose.model('pushNotification', pushNotificationSchema);
-
-        let pushNotifications = new pushNotification({ endpoint: subscription, userID: "235", browser: browserName });
+       
+        let pushNotifications = new pushNotification({ endpoint: subscription, userID: "235", browser: browserName, deviceID: deviceID, failedDate: null });
         result = await pushNotifications.save();
     }
     catch (error) {
@@ -60,27 +61,92 @@ const saveToDatabase = async (subscription, browserName) => {
 app.post("/subscribe", (req, res) => {
     // Get pushSubscription object
     const subscription = req.body.subscription;
-    const browserName = req.body.browserName;
-    console.log("req.body*****", req.body)
-    console.log("Subscription*****", subscription)
-    console.log("browserName*****", browserName)
-    saveToDatabase(subscription, browserName) //Method to save the subscription to Database
-    // Send 201 - resource created
-    console.log("saved")
+    const browserName = req.body.browserName;  
+    const deviceID = req.body.deviceID;
+    saveToDatabase(subscription, browserName, deviceID)    
     res.status(201).json({});
-
-    // Create payload
     const payload = JSON.stringify({ title: "Push Test by Elizabeth", message:"Elizabeth please check your email"});
-    console.log("Payloaddddddddd", payload)
-    // Pass object into sendNotification
+  
     webpush
         .sendNotification(subscription, payload)
         .catch(err => console.error(err));
 });
 //function to send the notification to the subscribed device
-const sendNotification = (subscription, dataToSend) => {
-    console.log("sendnotification")
-    webpush.sendNotification(subscription, dataToSend).catch(err => console.error(err));
+const sendNotification = (subscription, dataToSend, deviceID) => {
+   
+    webpush.sendNotification(subscription, dataToSend).catch(err => {
+        console.log("calling updateFailedTime")
+        const result = updateFailedTime("235", subscription, deviceID);       
+        return err;
+    }).then(notification => { 
+       // console.log("notification***", notification)
+        if (notification && notification.statusCode === 201) {  
+            console.log("calling removeFailedTime")
+            removeFailedTime("235", subscription, deviceID);
+        }
+    });
+}
+
+const removeFailedTime = async (userID, subscription, deviceID) => { 
+    let pushNotification = mongoose.model('pushNotification', pushNotificationSchema);
+    const query = {
+        userID: userID,
+        endpoint: subscription,
+        deviceID: deviceID,
+        failedDate: { $ne: null }
+    }
+    const setFailedTime = {
+        $set: {
+            failedDate: null
+        }
+    }
+    const result = await pushNotification.updateOne(query, setFailedTime)
+ 
+    if (!result) {
+        const error = `Subscription Endpoint: ${subscription} for the userID ${userID} was not found`
+        console.error(error)
+        return { errors: error }
+    }
+    return result
+}
+const updateFailedTime = async (userID, subscription, deviceID) => { 
+    let pushNotification = mongoose.model('pushNotification', pushNotificationSchema);
+    const utcNow = getUtcDateNow()
+    const query = {
+        userID: userID,
+        endpoint: subscription,
+        deviceID: deviceID,
+        failedDate: null
+    }
+    const setFailedTime = {
+        $set: {
+            failedDate: utcNow
+        }
+    }
+
+    const result = await pushNotification.updateOne(query, setFailedTime)
+  
+    if (!result) {
+        const error = `Subscription Endpoint: ${subscription} for the userID ${userID} was not found`
+        console.error(error)
+        return { errors: error }
+    }
+    return result
+}
+const getUtcDateFromDate = (date) => {
+    const utc_timestamp = Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        date.getUTCHours(),
+        date.getUTCMinutes(),
+        date.getUTCSeconds(),
+        date.getUTCMilliseconds(),
+    )
+    return new Date(utc_timestamp)
+}
+const getUtcDateNow = () => {
+    return getUtcDateFromDate(new Date())
 }
 const getSubscription = async() => {
     console.log("getSubscription")
@@ -89,12 +155,13 @@ const getSubscription = async() => {
     console.log("notificationssssssss", notifications)
     return notifications;
 }
-const getEndpointKey= async (userID, browserName) => {
+const getEndpointKey= async (userID, browserName,deviceID) => {
     console.log("getSubscription with UserID")
     const pushNotification = mongoose.model('pushNotification', pushNotificationSchema);
     const query = {
         userID: userID,
-        browser: browserName
+        browser: browserName,
+        deviceID: deviceID
     };
     let data = await pushNotification.findOne(query);
     console.log("endpoint called", data)
@@ -113,14 +180,14 @@ app.get('/send-notification', async (req, res) => {
     const payload = JSON.stringify({ title: "Second Push Test by Elizabeth", message: "Elizabeth please check your email" });
     subscription.forEach((x) => {
         console.log("Endpoint****", x.endpoint)
-        sendNotification(x.endpoint, payload)
+        sendNotification(x.endpoint, payload, x.deviceID)
     });
     return res.json({ message: 'message sent' })
 })
 
 app.get('/get', async (req, res) => {
     console.log("Get subscription***", req.query.userID, "browserNamae", req.query.browser);
-    const result = await getEndpointKey(req.query.userID, req.query.browser); //get subscription from your databse here.
+    const result = await getEndpointKey(req.query.userID, req.query.browser, req.query.deviceID); //get subscription from your databse here.
    // console.log("subscription***", subscription[0].endpoint);
 
     //const payload = JSON.stringify({ title: "Second Push Test by Elizabeth", message: "Elizabeth please check your email" });
@@ -142,7 +209,8 @@ app.delete("/unsubscribe", (req, res) => {
     const browser = req.query.browser
     const query = {
         userID: userID,
-        browser: browser
+        browser: browser, 
+        deviceID: deviceID,
     };
     console.log("query*****", query)
   

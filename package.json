@@ -15,9 +15,9 @@
   "keywords": [],
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^2.2.0",   
+    "body-parser": "^2.2.0",
     "express": "^5.1.0",
-    "mongoose": "^8.13.2",    
+    "mongoose": "^8.13.2",
     "web-push": "^3.6.7"
   }
 }
